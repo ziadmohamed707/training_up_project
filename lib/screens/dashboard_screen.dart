@@ -444,7 +444,10 @@ class _DashboardMetricCard extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      Text(centerBottom, style: AppTextStyles.bodyMedium),
+                      Text(
+                        centerBottom,
+                        style: TextStyle(fontSize: 10, color: Colors.black54),
+                      ),
                     ],
                   ),
                 ),

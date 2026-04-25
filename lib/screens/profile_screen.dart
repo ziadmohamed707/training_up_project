@@ -641,7 +641,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       children: [
         Expanded(
           child: _buildStatItem(
-            value: _metricValue('weight', '55', ' kg'),
+            value: _metricValue('current_weight', '55', ' kg'),
             label: 'Weight',
           ),
         ),
@@ -665,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         _buildDivider(),
         Expanded(
-          child: _buildStatItem(value: '$bmr ', label: 'kcal BMR'),
+          child: _buildStatItem(value: '${int.parse(bmr)} ', label: 'kcal BMR'),
         ),
       ],
     );

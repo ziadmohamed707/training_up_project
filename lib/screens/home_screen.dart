@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategory;
   String? _selectedLevel;
   String _selectedGoal = 'Gain Weight';
+  int _profileRefreshTrigger = 0;
 
   static const List<String> _goalItems = [
     'Loose Weight',
@@ -84,6 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final fullName = (resolvedData['full_name'] ?? '').toString().trim();
         if (fullName.isNotEmpty) {
           _userName = fullName.split(' ').first;
+        }
+        // Auto-set level filter from user's fitness level
+        final fitnessLevel = (resolvedData['fitness_level'] ?? '')
+            .toString()
+            .toLowerCase();
+        if (fitnessLevel.isNotEmpty) {
+          _selectedLevel = _mapFitnessLevel(fitnessLevel);
         }
       });
     } catch (e) {
@@ -159,8 +167,33 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _profileData = data;
         _userName = data['full_name']?.toString().split(' ').first ?? 'User';
+        // Auto-set level filter from user's fitness level
+        final fitnessLevel = (data['fitness_level'] ?? '')
+            .toString()
+            .toLowerCase();
+        if (fitnessLevel.isNotEmpty) {
+          _selectedLevel = _mapFitnessLevel(fitnessLevel);
+        }
       });
       await _saveLocalUserProfile(data);
+    }
+  }
+
+  /// Maps API / profile-setup fitness level strings to the filter values
+  /// used by [_matchesSelectedLevel].
+  String? _mapFitnessLevel(String raw) {
+    switch (raw.toLowerCase()) {
+      case 'beginner':
+        return 'Beginner';
+      case 'intermediate':
+      case 'average':
+        return 'Average';
+      case 'advanced':
+      case 'expert':
+      case 'hard':
+        return 'Hard';
+      default:
+        return null;
     }
   }
 
@@ -314,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final resolvedImagePath = (freshItem?['image'] as String?) ?? imagePath;
 
     if (!mounted) return;
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ExerciseDetailScreen(
           data: payload,
@@ -323,6 +356,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+    // Refresh profile after returning from any exercise
+    if (mounted) {
+      setState(() => _profileRefreshTrigger++);
+    }
   }
 
   @override
@@ -401,6 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ProfileScreen(
       profileData: _profileData,
       fallbackName: _userName,
+      refreshTrigger: _profileRefreshTrigger,
       onEditProfile: () async {
         final updated = await Navigator.of(context).push<Map<String, dynamic>>(
           MaterialPageRoute(
@@ -1438,6 +1476,10 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
+            // Refresh profile whenever the user opens the profile tab
+            if (index == 3) {
+              _profileRefreshTrigger++;
+            }
           });
         },
         type: BottomNavigationBarType.fixed,

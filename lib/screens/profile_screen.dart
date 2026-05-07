@@ -13,12 +13,14 @@ class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic> profileData;
   final String fallbackName;
   final VoidCallback? onEditProfile;
+  final int refreshTrigger;
 
   const ProfileScreen({
     super.key,
     this.profileData = const {},
     required this.fallbackName,
     this.onEditProfile,
+    this.refreshTrigger = 0,
   });
 
   @override
@@ -37,8 +39,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   Map<String, Map<String, dynamic>> _exerciseLookupByName = const {};
 
   Map<String, dynamic> get _effectiveProfileData => {
-    ..._cachedProfileData,
     ...widget.profileData,
+    ..._cachedProfileData,
   };
 
   @override
@@ -53,6 +55,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Refresh data when app comes to foreground
     if (state == AppLifecycleState.resumed && mounted) {
+      _refreshAll();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshTrigger != widget.refreshTrigger) {
       _refreshAll();
     }
   }
@@ -156,7 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         try {
           await _appBox?.put(
             AppConstants.keyCachedProfileData,
-            jsonEncode(profileData),
+            Map<String, dynamic>.from(profileData),
           );
         } catch (_) {
           // Ignore Hive errors
@@ -334,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   String _metricValue(String key, String fallback, String suffix) {
-    final value = _effectiveProfileData[key];
+    final value = _profileValue(key);
     if (value is num) {
       final normalized = value % 1 == 0
           ? value.toInt().toString()
@@ -345,6 +355,21 @@ class _ProfileScreenState extends State<ProfileScreen>
     final raw = (value ?? '').toString().trim();
     if (raw.isEmpty) return '$fallback$suffix';
     return raw.endsWith(suffix) ? raw : '$raw$suffix';
+  }
+
+  dynamic _profileValue(String key) {
+    final direct = _effectiveProfileData[key];
+    if (direct != null && direct.toString().trim().isNotEmpty) {
+      return direct;
+    }
+
+    // Backward/alternate API key support.
+    switch (key) {
+      case 'current_weight':
+        return _effectiveProfileData['weight'];
+      default:
+        return direct;
+    }
   }
 
   double _asDouble(dynamic value, double fallback) {
@@ -360,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   double _calculateBMI() {
-    final weightKg = _asDouble(_effectiveProfileData['current_weight'], 55);
+    final weightKg = _asDouble(_profileValue('current_weight'), 55);
     final heightCm = _asDouble(_effectiveProfileData['height'], 170);
     final heightM = heightCm / 100;
     if (heightM <= 0) return 0;
@@ -369,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   double _calculateBMR() {
     final weightKg = _asDouble(
-      _effectiveProfileData['current_weight'],
+      _profileValue('current_weight'),
       55,
     ).clamp(35.0, 220.0);
     final heightCm = _asDouble(
@@ -402,10 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       return 'gain_muscle';
     }
 
-    final currentWeight = _asDouble(
-      _effectiveProfileData['current_weight'],
-      55,
-    );
+    final currentWeight = _asDouble(_profileValue('current_weight'), 55);
     final goalWeight = _asDouble(
       _effectiveProfileData['goal_weight'],
       currentWeight,
@@ -417,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Map<String, int> _calculatedMacros() {
     final weightKg = _asDouble(
-      _effectiveProfileData['current_weight'],
+      _profileValue('current_weight'),
       55,
     ).clamp(35.0, 220.0);
     final heightCm = _asDouble(

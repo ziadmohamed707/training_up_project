@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -161,90 +162,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
         return;
       }
 
-      // Show success feedback
-      showModalBottomSheet(
-        context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (ctx) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  color: Color(0xFF2E7D32),
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Workout Started!',
-                style: AppTextStyles.heading3.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$exerciseName is now in progress. Give it your best!',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.local_fire_department,
-                    color: Colors.orange,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${_kcal()} kcal  •  ${_minutes()} min',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Let\'s Go!',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
+      // Navigate to the workout timer screen
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _WorkoutTimerScreen(
+            exerciseName: exerciseName,
+            durationMinutes: _minutes(),
+            kcal: _kcal(),
           ),
         ),
       );
@@ -1375,6 +1299,327 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Workout Timer Screen
+// ─────────────────────────────────────────────────────────────
+
+class _WorkoutTimerScreen extends StatefulWidget {
+  final String exerciseName;
+  final int durationMinutes;
+  final int kcal;
+
+  const _WorkoutTimerScreen({
+    required this.exerciseName,
+    required this.durationMinutes,
+    required this.kcal,
+  });
+
+  @override
+  State<_WorkoutTimerScreen> createState() => _WorkoutTimerScreenState();
+}
+
+class _WorkoutTimerScreenState extends State<_WorkoutTimerScreen> {
+  late int _remainingSeconds;
+  Timer? _timer;
+  bool _isRunning = false;
+  bool _isFinished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingSeconds = widget.durationMinutes * 60;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    setState(() => _isRunning = true);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+        } else {
+          _isRunning = false;
+          _isFinished = true;
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  void _pauseTimer() {
+    _timer?.cancel();
+    setState(() => _isRunning = false);
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    setState(() {
+      _isRunning = false;
+      _isFinished = false;
+      _remainingSeconds = widget.durationMinutes * 60;
+    });
+  }
+
+  String _formatTime(int totalSeconds) {
+    final m = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final s = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  double get _progress {
+    final total = widget.durationMinutes * 60;
+    if (total <= 0) return 0;
+    return 1 - (_remainingSeconds / total);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A1628),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Top bar
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'WORKOUT TIMER',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.heading3.copyWith(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Exercise name
+              Text(
+                widget.exerciseName.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: AppTextStyles.heading3.copyWith(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Calorie info
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.local_fire_department,
+                    color: Colors.orange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${widget.kcal} kcal  •  ${widget.durationMinutes} min',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // Circular timer
+              SizedBox(
+                width: 260,
+                height: 260,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 260,
+                      height: 260,
+                      child: CircularProgressIndicator(
+                        value: _progress,
+                        strokeWidth: 12,
+                        backgroundColor: Colors.white12,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _isFinished
+                              ? const Color(0xFF4CAF50)
+                              : AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isFinished)
+                          const Icon(
+                            Icons.check_circle,
+                            color: Color(0xFF4CAF50),
+                            size: 48,
+                          )
+                        else ...[
+                          Text(
+                            _formatTime(_remainingSeconds),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 58,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          Text(
+                            _isRunning
+                                ? 'In Progress'
+                                : (_remainingSeconds ==
+                                          widget.durationMinutes * 60
+                                      ? 'Ready'
+                                      : 'Paused'),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Colors.white54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                        if (_isFinished)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Workout Complete!',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: const Color(0xFF4CAF50),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Control buttons
+              if (!_isFinished) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Reset button
+                    IconButton(
+                      onPressed: _resetTimer,
+                      icon: const Icon(Icons.refresh, color: Colors.white54),
+                      iconSize: 32,
+                      tooltip: 'Reset',
+                    ),
+                    const SizedBox(width: 32),
+                    // Start / Pause button
+                    GestureDetector(
+                      onTap: _isRunning ? _pauseTimer : _startTimer,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.4),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _isRunning ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    // Skip to end
+                    IconButton(
+                      onPressed: () {
+                        _timer?.cancel();
+                        setState(() {
+                          _isRunning = false;
+                          _isFinished = true;
+                          _remainingSeconds = 0;
+                        });
+                      },
+                      icon: const Icon(Icons.skip_next, color: Colors.white54),
+                      iconSize: 32,
+                      tooltip: 'Finish',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _isRunning
+                      ? 'Tap pause to stop the timer'
+                      : 'Tap ▶ to start your workout',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.white38,
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'GREAT WORK! DONE',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       ),
     );
   }

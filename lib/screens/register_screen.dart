@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/api_service.dart';
 import '../utils/app_styles.dart';
 import '../widgets/custom_button.dart';
@@ -259,25 +258,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
                   Center(
-                    child: Text(
-                      'Or Register with',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildSocialButton(
-                    icon: FontAwesomeIcons.google,
-                    text: 'Connect with Google',
-                    backgroundColor: AppColors.white,
-                    textColor: AppColors.textPrimary,
-                    onPressed: () {
-                      // TODO: Implement Google Sign In
-                    },
-                  ),
-                  const SizedBox(height: 30),
-                  Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -305,37 +285,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String text,
-    required Color backgroundColor,
-    required Color textColor,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: FaIcon(icon, size: 20),
-        label: Text(text),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: backgroundColor == AppColors.white
-                  ? Colors.grey[300]!
-                  : backgroundColor,
-            ),
-          ),
-          elevation: 0,
         ),
       ),
     );

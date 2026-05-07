@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/api_service.dart';
 import '../utils/app_styles.dart';
 import '../widgets/custom_button.dart';
@@ -140,17 +139,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _login,
                     isLoading: _isLoading,
                   ),
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      'Or Login with',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
                   const SizedBox(height: 30),
                   Center(
                     child: Row(

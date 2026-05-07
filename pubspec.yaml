@@ -50,6 +50,7 @@ dependencies:
   # Icons
   font_awesome_flutter: ^10.7.0
   hive: ^2.2.3
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

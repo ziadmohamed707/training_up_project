@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
@@ -21,11 +22,8 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  final homePath = Platform.environment['HOME'];
-  final baseDir = homePath != null && homePath.isNotEmpty
-      ? Directory('$homePath/Documents')
-      : Directory.systemTemp;
-  final hiveDir = Directory('${baseDir.path}/.training_up_hive');
+  final appDocDir = await getApplicationDocumentsDirectory();
+  final hiveDir = Directory('${appDocDir.path}/.training_up_hive');
   if (!await hiveDir.exists()) {
     await hiveDir.create(recursive: true);
   }
